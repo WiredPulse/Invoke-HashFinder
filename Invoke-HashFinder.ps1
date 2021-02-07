@@ -74,7 +74,7 @@
     )
 
     # Input Hashes here
-    $global:sha256 = @()
+    $global:sha256 = @('F57D1703A47FF920299832A39C31C7621C6AAD02EAE48C9AF202C1970F15C40A','112C6159F7734680FCC248625F7D690BFEEBC5E3A7B525ED3C2B81900DE02729','7B1BD88E03E198FBE596EBC36F750C58F55369B1EE693B3B5B6EA2139CE8E0BB')
     $global:sha1 = @()
 
 
@@ -86,7 +86,8 @@
 
     function hashDate($path, $HashByCreationDate, $ExportDirectory){
       $fullPath =@()
-        $fullPath = (Get-ChildItem $path -recurse -File | Where-Object{$_.CreationTime.ToShortDateString() -eq $HashByCreationDate.ToShortDateString()}).FullName  
+        $fullPath = (Get-ChildItem $path -recurse -File -ErrorAction SilentlyContinue | Where-Object{$_.CreationTime.ToShortDateString() -eq $HashByCreationDate.ToShortDateString()}).FullName 
+        $fullPath 
         Hasher -fullpath $fullPath -ExportDirectory $ExportDirectory
     }  
    
@@ -178,7 +179,7 @@
         }
     }
     elseif($OSDrive){
-        $path = $env:SystemDrive 
+        $path = $env:SystemDrive + "\"
     }
     else{
         Write-Error -Message "A directory, drive, or system drive parameter has to be supplied"
