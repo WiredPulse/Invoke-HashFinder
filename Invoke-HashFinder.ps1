@@ -85,9 +85,8 @@
     } 
 
     function hashDate($path, $HashByCreationDate, $ExportDirectory){
-      $fullPath =@()
+        $fullPath =@()
         $fullPath = (Get-ChildItem $path -recurse -File -ErrorAction SilentlyContinue | Where-Object{$_.CreationTime.ToShortDateString() -eq $HashByCreationDate.ToShortDateString()}).FullName 
-        $fullPath 
         Hasher -fullpath $fullPath -ExportDirectory $ExportDirectory
     }  
    
