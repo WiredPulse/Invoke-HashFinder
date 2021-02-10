@@ -16,44 +16,44 @@
     .PARAMETER OSDrive
         Used to recursively search the drive that the operating system is installed on
 
-    .PARAMETER HashByCreationDate
+    .PARAMETER CreationDate
         Used to supply a creation date; files matching this will be hashed
 
-    .PARAMETER HashByFileSize
+    .PARAMETER FileSize
         Used to supply a file size in bytes; files matching this will be hashed
 
     .PARAMETER ExportDirectory
         Used to depict where to create results file; default location is c:\windows\temp
 
     .EXAMPLE
-        PS C:\ > .\Invoke-HashFinder -Directory "c:\users\administrator" -HashByCreationDate "06/13/2020"
+        PS C:\ > .\Invoke-HashFinder -Directory "c:\users\administrator" -CreationDate "06/13/2020"
 
         Hashes files within and recursive of "c:\users\administrator" that have a creation date of June 13, 2020 and then checks for matches in the SHA1 and SHA256 list 
-        on line 51. All matches will be deleted and there will be an entry written to a CSV file in "c:\windows\temp".
+        on line 76. All matches will be deleted and there will be an entry written to a CSV file in "c:\windows\temp".
 
     .EXAMPLE
-        PS C:\ > .\Invoke-HashFinder -Directory "c:\users\administrator" -HashByCreationDate "12/20/2020" -LogOnly
+        PS C:\ > .\Invoke-HashFinder -Directory "c:\users\administrator" -CreationDate "12/20/2020" -LogOnly
 
         Hashes files within and recursive of "c:\users\administrator" that have a creation date of December 20, 2020 and then checks for matches in the SHA1 and SHA256 list 
-        on line 51. All matches will have an entry written to a CSV file in "c:\windows\temp". The file WILL NOT be deleted.
+        on line 76. All matches will have an entry written to a CSV file in "c:\windows\temp". The file WILL NOT be deleted.
 
     .EXAMPLE
-        PS C:\ > .\Invoke-HashFinder -Directory "c:\users\administrator" -HashByFileSize "1044"
+        PS C:\ > .\Invoke-HashFinder -Directory "c:\users\administrator" -FileSize "1044"
 
         Hashes files within and recursive of "c:\users\administrator" that have a file size of 1044 bytes and then checks for matches in the SHA1 and SHA256 list 
-        on line 51. All matches will be deleted and there will be an entry written to a CSV file in "c:\windows\temp".
+        on line 76. All matches will be deleted and there will be an entry written to a CSV file in "c:\windows\temp".
 
     .EXAMPLE
-        PS C:\ > .\Invoke-HashFinder -Drive "D:\" -HashByFileSize "8426" -ExportDirectory "C:\"
+        PS C:\ > .\Invoke-HashFinder -Drive "D:\" -FileSize "8426" -ExportDirectory "C:\"
 
         Hashes files within and recursive of "d:\" that have a file size of 8426 bytes and then checks for matches in the SHA1 and SHA256 list 
-        on line 51. All matches will be deleted and there will be an entry written to a CSV file in "c:\".
+        on line 76. All matches will be deleted and there will be an entry written to a CSV file in "c:\".
 
     .EXAMPLE
-        PS C:\ > .\Invoke-HashFinder -OSDrive -HashByFileSize "4512" -ExportDirectory "C:\"
+        PS C:\ > .\Invoke-HashFinder -OSDrive -FileSize "4512" -ExportDirectory "C:\"
 
         Hashes files within and recursive of the drive that the operating system is installed on that have a file size of 4512 bytes and then checks for matches in the 
-        SHA1 and SHA256 list on line 51. All matches will be deleted and there will be an entry written to a CSV file in "c:\".
+        SHA1 and SHA256 list on line 76. All matches will be deleted and there will be an entry written to a CSV file in "c:\".
 
     .NOTES  
         File Name      : Invoke-HashFinder.ps1
@@ -67,8 +67,8 @@
         [string]$Directory,
         [string]$Drive,
         [switch]$OSDrive,
-        [datetime]$HashByCreationDate,
-        [string]$HashByFileSize,
+        [datetime]$CreationDate,
+        [string]$FileSize,
         [string]$ExportDirectory = "c:\windows\temp\$env:COMPUTERNAME.txt",
         [switch]$LogOnly
     )
@@ -78,15 +78,15 @@
     $global:sha1 = @()
 
 
-    function hashSize($path, $HashByFileSize, $ExportDirectory){
+    function hashSize($path, $FileSize, $ExportDirectory){
         $fullPath =@()
-        $fullPath = (Get-ChildItem $path -recurse -File | Where-Object{$_.Length -eq $HashByFileSize}).FullName
+        $fullPath = (Get-ChildItem $path -recurse -File | Where-Object{$_.Length -eq $FileSize}).FullName
         Hasher -fullpath $fullPath -ExportDirectory $ExportDirectory
     } 
 
-    function hashDate($path, $HashByCreationDate, $ExportDirectory){
+    function hashDate($path, $CreationDate, $ExportDirectory){
         $fullPath =@()
-        $fullPath = (Get-ChildItem $path -recurse -File -ErrorAction SilentlyContinue | Where-Object{$_.CreationTime.ToShortDateString() -eq $HashByCreationDate.ToShortDateString()}).FullName 
+        $fullPath = (Get-ChildItem $path -recurse -File -ErrorAction SilentlyContinue | Where-Object{$_.CreationTime -gt $CreationDate}).FullName 
         Hasher -fullpath $fullPath -ExportDirectory $ExportDirectory
     }  
    
@@ -119,7 +119,7 @@
             catch{
                 [pscustomobject]@{
                         Algorithm = "SHA1"
-                        Hash = "Unknown"
+                        Hash = "Couldn't Retrieve Hash"
                         Path = $file
                         Deleted = "False"
                 } | Export-Csv $ExportDirectory -Append 
@@ -148,7 +148,7 @@
            catch{
                 [pscustomobject]@{
                         Algorithm = "SHA256"
-                        Hash = "Unknown"
+                        Hash = "Couldn't Retrieve Hash"
                         Path = $file
                         Deleted = "False"
                 } | Export-Csv $ExportDirectory -Append 
@@ -185,11 +185,11 @@
     }
 
 
-    if($HashByCreationDate){
-        hashDate -path $path -HashByCreationDate $HashByCreationDate -ExportDirectory $ExportDirectory
+    if($CreationDate){
+        hashDate -path $path -CreationDate $CreationDate -ExportDirectory $ExportDirectory
     }
-    elseif($HashByFileSize){
-        hashSize -path $path -HashByFileSize $HashByFileSize -ExportDirectory $ExportDirectory
+    elseif($FileSize){
+        hashSize -path $path -FileSize $FileSize -ExportDirectory $ExportDirectory
     }
     else{
         hash -path $path -ExportDirectory $ExportDirectory
